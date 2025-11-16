@@ -1,14 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login:', { email, password });
+    setLoading(true);
+    setError('');
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during login');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,11 +70,18 @@ function Login() {
             />
           </div>
 
+          {error && (
+            <div className="bg-red-50 border-2 border-red-500 text-red-700 px-5 py-3 rounded-xl text-center">
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white font-semibold text-xl py-5 rounded-xl shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-300 mt-8"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white font-semibold text-xl py-5 rounded-xl shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-300 mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
